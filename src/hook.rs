@@ -50,8 +50,13 @@ pub(crate) unsafe fn hook(ev: &input_event, u: &UInput) {
             u.emit(&input_event { code: KEY_RIGHT, ..*ev });
         },
 
-        (KEY_K, V_KEYDOWN) => {
-            spawn_orphan("sleep 5\0".as_ptr() as _)
+        (KEY_RIGHT, V_KEYDOWN) if caps_down => {
+            shortcut_triggered_after_caps_down = true;
+            u.click(KEY_NEXTSONG);
+        },
+        (KEY_LEFT, V_KEYDOWN) if caps_down => {
+            shortcut_triggered_after_caps_down = true;
+            u.click(KEY_PREVIOUSSONG);
         }
 
         _ => { u.emit(ev); }
