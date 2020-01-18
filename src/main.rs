@@ -1,6 +1,7 @@
 #![allow(irrefutable_let_patterns)]
 #![allow(dead_code, unused_imports)]
 #![allow(non_camel_case_types)]
+#![allow(non_upper_case_globals)]
 #![deny(bare_trait_objects)]
 #![warn(clippy::all)]
 
@@ -18,12 +19,17 @@
 
 use libc::*;
 
+mod hook;
 mod codes;
 use codes::*;
 use core::ffi::c_void;
 use core::mem::size_of_val;
 
 type c_str = *const c_char; // Ensure they end with \0 !!
+
+const V_KEYUP: __s32 = 0;
+const V_KEYDOWN: __s32 = 1;
+const V_KEYREP: __s32 = 2;
 
 static mut STDERR: *mut FILE = 0 as _;
 
@@ -110,7 +116,24 @@ unsafe fn setup(source: c_str) -> ! {
             continue
         }
 
-        fuck(&ev, &u);
+        // rescue key: hold ctrl key on both sides and press K
+        static mut LCtrl: bool = false;
+        static mut RCtrl: bool = false;
+        if ev.type_ == EV_KEY {
+            match (ev.code, ev.value) {
+                (KEY_LEFTCTRL, V_KEYDOWN) => LCtrl = true,
+                (KEY_LEFTCTRL, V_KEYUP) => LCtrl = false,
+                (KEY_RIGHTCTRL, V_KEYDOWN) => RCtrl = true,
+                (KEY_RIGHTCTRL, V_KEYUP) => RCtrl = false,
+                (KEY_K, V_KEYDOWN) if LCtrl && RCtrl => {
+                    fputs("Double Ctrl + K detected, exiting.\n\0".as_ptr() as _, STDERR);
+                    exit(0)
+                },
+                _ => {}
+            }
+        }
+
+        hook::hook(&ev, &u);
     }
 }
 
@@ -118,57 +141,48 @@ struct UInput {
     fd: c_int
 }
 
+/// most methods returns self for chaining
 impl UInput {
     /// low level API: emit an raw event
-    unsafe fn emit(&self, ev: &input_event) {
-        write(self.fd, ev as *const _ as _, size_of_val(ev)).dienz("write ev")
+    unsafe fn emit(&self, ev: &input_event) -> &Self {
+        write(self.fd, ev as *const _ as _, size_of_val(ev)).dienz("write ev");
+        self
     }
 
     /// low level API: emit a SYN_REPORT
-    unsafe fn sync(&self) {
+    unsafe fn sync(&self) -> &Self {
         self.emit(&input_event { type_: EV_SYN, code: SYN_REPORT, ..core::mem::zeroed() })
     }
 
     /// move cursor by (x, y)
-    unsafe fn rel(&self, x: __s32, y: __s32) {
+    unsafe fn rel(&self, x: __s32, y: __s32) -> &Self {
         if x != 0 {
-            self.emit(&input_event { type_: EV_REL, code: REL_X, value: x, ..core::mem::zeroed() })
+            self.emit(&input_event { type_: EV_REL, code: REL_X, value: x, ..core::mem::zeroed() });
         }
         if y != 0 {
-            self.emit(&input_event { type_: EV_REL, code: REL_Y, value: y, ..core::mem::zeroed() })
+            self.emit(&input_event { type_: EV_REL, code: REL_Y, value: y, ..core::mem::zeroed() });
         }
         self.sync()
     }
 
     /// press down (without release) a key
-    unsafe fn press(&self, key: __u16) {
+    unsafe fn press(&self, key: __u16) -> &Self {
         self.emit(&input_event { type_: EV_KEY, code: key, value: 1, ..core::mem::zeroed() });
-        self.sync();
+        self.sync()
     }
 
     /// release (without press first) a key
-    unsafe fn release(&self, key: __u16) {
+    unsafe fn release(&self, key: __u16) -> &Self {
         self.emit(&input_event { type_: EV_KEY, code: key, value: 0, ..core::mem::zeroed() });
         self.sync()
     }
 
     /// press and release a key
-    unsafe fn click(&self, key: __u16) {
+    unsafe fn click(&self, key: __u16) -> &Self {
         self.emit(&input_event { type_: EV_KEY, code: key, value: 0, ..core::mem::zeroed() });
         self.emit(&input_event { type_: EV_KEY, code: key, value: 1, ..core::mem::zeroed() });
         self.sync()
     }
-}
-
-unsafe fn fuck(ev: &input_event, u: &UInput) {
-    static mut x: __s32 = 2;
-    if ev.type_ == EV_KEY && ev.code == KEY_D {
-        u.rel(x, 4);
-        x += 1;
-        return
-    }
-    u.emit(ev);
-    u.sync()
 }
 
 trait DieNZ {
@@ -188,5 +202,18 @@ impl DieNZ for ssize_t { // read/write
         if *self < 0 {
             die(msg)
         }
+    }
+}
+
+/// the stupid way to spawn a process and directly send it to init
+unsafe fn spawn_orphan(p: c_str) {
+    match fork() {
+        -1 => die("spawn child"),
+        0 => if fork() == 0 { // child, fork twice
+            execlp("bash\0".as_ptr() as _, "bash\0".as_ptr() as c_str, "-c\0".as_ptr() as c_str, p).dienz("spawn grand child")
+        } else {
+            exit(0) // suicide to send grand child to init
+        },
+        _ => {} // parent, do nothing and move on
     }
 }
