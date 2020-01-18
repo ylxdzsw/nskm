@@ -28,7 +28,7 @@ $ cc sys/codegen.c && ./a.out > src/codes.rs
 
 ### Messed things up and unable to Ctrl + C?
 
-Don't panic, there is a hard coded `LeftCtrl + RightCtrl + K` to kill NSKM.
+Don't panic, there is a hard coded <kbd>LeftCtrl</kbd>+<kbd>RightCtrl</kbd>+<kbd>K</kbd> to kill NSKM.
 
 ## Guide
 
