@@ -45,9 +45,8 @@ unsafe extern "C" fn main(argc: c_int, argv: *const c_str) -> ! {
     setup(*argv.offset(1))
 }
 
-#[panic_handler]
+#[panic_handler] // it should never panic anyway
 unsafe fn panic(_info: &core::panic::PanicInfo) -> ! {
-    // it should never panic
     exit(-2);
 }
 
@@ -62,12 +61,6 @@ pub struct uinput_setup {
 	pub id: input_id,
 	pub name: [c_char; UINPUT_MAX_NAME_SIZE],
 	pub ff_effects_max: __u32,
-}
-
-#[repr(C)]
-pub struct uinput_abs_setup {
-	pub code: __u16,
-    pub absinfo: input_absinfo
 }
 
 unsafe fn setup(source: c_str) -> ! {
@@ -91,7 +84,7 @@ unsafe fn setup(source: c_str) -> ! {
     ioctl(fdo, UI_SET_RELBIT, REL_Y as c_int).dienz("set relbit");
 
     let mut udev_setup: uinput_setup = core::mem::zeroed();
-    let name = "uinput-nskm"; // dest has been already zeroed
+    let name = "uinput-nskm"; // dest has already been zeroed
     memcpy(&mut udev_setup.name as *mut _ as _, name.as_ptr() as _, name.len() as _);
     udev_setup.id = input_id { bustype: BUS_VIRTUAL, vendor: 39, product: 39, version: 39 };
     ioctl(fdo, UI_DEV_SETUP, &udev_setup).dienz("setup dev");
@@ -116,7 +109,7 @@ unsafe fn setup(source: c_str) -> ! {
             continue
         }
 
-        // rescue key: hold ctrl key on both sides and press K
+        // rescue key: hold ctrl key on both sides and press K to kill the process
         static mut LCtrl: bool = false;
         static mut RCtrl: bool = false;
         if ev.type_ == EV_KEY {
@@ -167,20 +160,20 @@ impl UInput {
 
     /// press down (without release) a key
     unsafe fn press(&self, key: __u16) -> &Self {
-        self.emit(&input_event { type_: EV_KEY, code: key, value: 1, ..core::mem::zeroed() });
+        self.emit(&input_event { type_: EV_KEY, code: key, value: V_KEYDOWN, ..core::mem::zeroed() });
         self.sync()
     }
 
     /// release (without press first) a key
     unsafe fn release(&self, key: __u16) -> &Self {
-        self.emit(&input_event { type_: EV_KEY, code: key, value: 0, ..core::mem::zeroed() });
+        self.emit(&input_event { type_: EV_KEY, code: key, value: V_KEYUP, ..core::mem::zeroed() });
         self.sync()
     }
 
     /// press and release a key
     unsafe fn click(&self, key: __u16) -> &Self {
-        self.emit(&input_event { type_: EV_KEY, code: key, value: 0, ..core::mem::zeroed() });
-        self.emit(&input_event { type_: EV_KEY, code: key, value: 1, ..core::mem::zeroed() });
+        self.emit(&input_event { type_: EV_KEY, code: key, value: V_KEYDOWN, ..core::mem::zeroed() });
+        self.emit(&input_event { type_: EV_KEY, code: key, value: V_KEYUP, ..core::mem::zeroed() });
         self.sync()
     }
 }
@@ -197,7 +190,7 @@ impl DieNZ for c_int { // ioctl
     }
 }
 
-impl DieNZ for ssize_t { // read/write
+impl DieNZ for ssize_t { // read/write call
     unsafe fn dienz(&self, msg: &str) {
         if *self < 0 {
             die(msg)

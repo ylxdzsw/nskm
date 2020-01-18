@@ -9,6 +9,7 @@ panic = "abort"
 
 [profile.release]
 panic = "abort"
+lto = true
 
 [dependencies]
 libc = { version="0.2", default-features=false }
