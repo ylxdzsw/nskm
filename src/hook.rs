@@ -67,6 +67,16 @@ pub(crate) unsafe fn hook(ev: &input_event, u: &UInput) {
     caps_map_to!(KEY_E, KEY_END);
     caps_map_to!(KEY_R, KEY_PAGEUP);
     caps_map_to!(KEY_F, KEY_PAGEDOWN);
+
+    caps_map_to!(KEY_J, KEY_LEFT);
+    caps_map_to!(KEY_L, KEY_RIGHT);
+    caps_map_to!(KEY_I, KEY_UP);
+    caps_map_to!(KEY_K, KEY_DOWN);
+    caps_map_to!(KEY_U, KEY_HOME);
+    caps_map_to!(KEY_O, KEY_END);
+
+    caps_map_to!(KEY_SPACE, KEY_ESC);
+
     caps_map_to!(KEY_LEFT, KEY_PREVIOUSSONG);
     caps_map_to!(KEY_RIGHT, KEY_NEXTSONG);
     caps_map_to!(KEY_UP, "su ylxdzsw -c 'XDG_RUNTIME_DIR=/run/user/1000 pactl set-sink-volume @DEFAULT_SINK@ +1%'\0");
