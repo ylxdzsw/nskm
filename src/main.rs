@@ -90,7 +90,7 @@ unsafe fn setup(source: c_str) -> ! {
     ioctl(fdo, UI_DEV_SETUP, &udev_setup).dienz("setup dev");
     ioctl(fdo, UI_DEV_CREATE).dienz("create dev");
 
-    ioctl(fdi, EVIOCGRAB, 1 as c_ulong).dienz("grabbing io");
+    ioctl(fdi, EVIOCGRAB, 1 as c_ulong).dienz("grabbing io (hint: is NSKM already running?)");
 
     let mut ev: input_event = core::mem::zeroed(); // could be uninitialized
     let mut syn_dropped = false; // indicating overrun in evdev. Should drop all events up to and including next SYN_REPORT
