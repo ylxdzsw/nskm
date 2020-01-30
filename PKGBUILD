@@ -9,5 +9,5 @@ package() {
     cd "$startdir"
     cargo build --release
     install -D "$startdir"/target/release/nskm "$pkgdir"/usr/bin/nskm
-    install -Dm644 "$startdir"/nskm.service "$pkgdir"/usr/lib/systemd/system/nskm.service
+    install -Dm644 "$startdir"/nskm.service "$pkgdir"/usr/lib/systemd/system/nskm@.service
 }

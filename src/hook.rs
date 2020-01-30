@@ -74,6 +74,7 @@ pub(crate) unsafe fn hook(ev: &input_event, u: &UInput) {
     caps_map_to!(KEY_K, KEY_DOWN);
     caps_map_to!(KEY_U, KEY_HOME);
     caps_map_to!(KEY_O, KEY_END);
+    caps_map_to!(KEY_P, KEY_END);
 
     caps_map_to!(KEY_SPACE, KEY_ESC);
 

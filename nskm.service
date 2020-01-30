@@ -2,7 +2,7 @@
 Description=Non-Sucking Key Mapper
 
 [Service]
-ExecStart=/usr/bin/nskm /dev/input/by-path/platform-i8042-serio-0-event-kbd
+ExecStart=/usr/bin/nskm /dev/input/event%i
 
 [Install]
 WantedBy=getty.target multi-user.target
