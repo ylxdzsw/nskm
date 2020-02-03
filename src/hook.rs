@@ -17,21 +17,33 @@ pub(crate) unsafe fn hook(ev: &input_event, u: &UInput) {
         return // ignore CapsLock key 'cause I never use it
     }
 
-    macro_rules! caps_map_to { // TODO: a fourth argument that throttle (or disable) the repetition
+    static mut rctrl_down: bool = false;
+    if ev.code == KEY_RIGHTCTRL {
+        match ev.value {
+            V_KEYDOWN => rctrl_down = true,
+            V_KEYUP => rctrl_down = false,
+            _ => {}
+        };
+        return // ignore it too
+    }
+
+    let command_mode = || caps_down || rctrl_down;
+
+    macro_rules! caps_map_to { // TODO: a third argument that throttle (or disable) the repetition
         ($from: ident, $to: ident) => {{
-            static mut triggered_after_caps: bool = false;
+            static mut triggered_in_command_mode: bool = false;
             match (ev.code, ev.value) {
-                ($from, V_KEYDOWN) if caps_down => {
-                    triggered_after_caps = true;
+                ($from, V_KEYDOWN) if command_mode() => {
+                    triggered_in_command_mode = true;
                     u.emit(&input_event { code: $to, ..*ev });
                     return
                 },
-                ($from, V_KEYREP) if triggered_after_caps => {
+                ($from, V_KEYREP) if triggered_in_command_mode => {
                     u.emit(&input_event { code: $to, ..*ev });
                     return
                 },
-                ($from, V_KEYUP) if triggered_after_caps => {
-                    triggered_after_caps = false;
+                ($from, V_KEYUP) if triggered_in_command_mode => {
+                    triggered_in_command_mode = false;
                     u.emit(&input_event { code: $to, ..*ev });
                     return
                 },
@@ -39,19 +51,19 @@ pub(crate) unsafe fn hook(ev: &input_event, u: &UInput) {
             }
         }};
         ($from: ident, $to: expr) => {{
-            static mut triggered_after_caps: bool = false;
+            static mut triggered_in_command_mode: bool = false;
             match (ev.code, ev.value) {
-                ($from, V_KEYDOWN) if caps_down => {
-                    triggered_after_caps = true;
+                ($from, V_KEYDOWN) if command_mode() => {
+                    triggered_in_command_mode = true;
                     spawn_orphan($to.as_ptr() as _);
                     return
                 },
-                ($from, V_KEYREP) if triggered_after_caps => {
+                ($from, V_KEYREP) if triggered_in_command_mode => {
                     // spawn_orphan($to.as_ptr() as _);
                     return
                 },
-                ($from, V_KEYUP) if triggered_after_caps => {
-                    triggered_after_caps = false;
+                ($from, V_KEYUP) if triggered_in_command_mode => {
+                    triggered_in_command_mode = false;
                     return
                 },
                 _ => {}

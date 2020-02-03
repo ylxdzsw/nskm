@@ -24,6 +24,7 @@ mod codes;
 use codes::*;
 use core::ffi::c_void;
 use core::mem::size_of_val;
+use core::ptr::{null, null_mut};
 
 type c_str = *const c_char; // Ensure they end with \0 !!
 
@@ -207,6 +208,6 @@ unsafe fn spawn_orphan(p: c_str) {
         } else {
             exit(0) // suicide to send grand child to init
         },
-        _ => {} // parent, do nothing and move on
+        pid => { waitpid(pid, null_mut(), 0); }
     }
 }
