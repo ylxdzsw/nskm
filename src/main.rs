@@ -127,7 +127,7 @@ unsafe fn setup(source: c_str) -> ! {
             }
         }
 
-        hook::hook(&ev, &u);
+        hook::hook(ev, &u);
     }
 }
 

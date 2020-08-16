@@ -1,9 +1,9 @@
 use super::*;
 
-pub(crate) unsafe fn hook(ev: &input_event, u: &UInput) {
+pub(crate) unsafe fn hook(mut ev: input_event, u: &UInput) {
     // simply forward non-keyboard events
     if ev.type_ != EV_KEY {
-        u.emit(ev);
+        u.emit(&ev);
         return
     }
 
@@ -35,17 +35,14 @@ pub(crate) unsafe fn hook(ev: &input_event, u: &UInput) {
             match (ev.code, ev.value) {
                 ($from, V_KEYDOWN) if command_mode() => {
                     triggered_in_command_mode = true;
-                    u.emit(&input_event { code: $to, ..*ev });
-                    return
+                    ev.code = $to;
                 },
                 ($from, V_KEYREP) if triggered_in_command_mode => {
-                    u.emit(&input_event { code: $to, ..*ev });
-                    return
+                    ev.code = $to;
                 },
                 ($from, V_KEYUP) if triggered_in_command_mode => {
                     triggered_in_command_mode = false;
-                    u.emit(&input_event { code: $to, ..*ev });
-                    return
+                    ev.code = $to;
                 },
                 _ => {}
             }
@@ -105,5 +102,17 @@ pub(crate) unsafe fn hook(ev: &input_event, u: &UInput) {
 
     disable!(KEY_RIGHTSHIFT);
 
-    u.emit(ev);
+    macro_rules! swap {
+        ($key1:ident, $key2:ident) => {
+            match ev.code {
+                $key1 => ev.code = $key2,
+                $key2 => ev.code = $key1,
+                _ => {}
+            }
+        }
+    }
+
+    swap!(KEY_LEFTCTRL, KEY_LEFTALT);
+
+    u.emit(&ev);
 }
