@@ -36,7 +36,7 @@ static mut STDERR: *mut FILE = 0 as _;
 
 #[no_mangle]
 unsafe extern "C" fn main(argc: c_int, argv: *const c_str) -> ! {
-    STDERR = fdopen(STDERR_FILENO, "w".as_ptr() as _);
+    STDERR = fdopen(STDERR_FILENO, "w\0".as_ptr() as _);
     if STDERR == 0 as _ {
         exit(-3);
     }

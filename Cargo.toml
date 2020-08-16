@@ -1,6 +1,6 @@
 [package]
 name = "nskm"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["Shiwei Zhang <ylxdzsw@gmail.com>"]
 edition = "2018"
 

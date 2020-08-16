@@ -1,8 +1,8 @@
+# This is expected to be used with some udev rules, for example:
+# ACTION=="add", KERNEL=="event*", SUBSYSTEM=="input", ENV{ID_INPUT_KEYBOARD}=="?*", ATTRS{id/bustype}!="0006", TAG+="systemd", ENV{SYSTEMD_WANTS}="nskm@.service"
+
 [Unit]
 Description=Non-Sucking Key Mapper
 
 [Service]
-ExecStart=/usr/bin/nskm /dev/input/event%i
-
-[Install]
-WantedBy=getty.target multi-user.target
+ExecStart=/usr/bin/sh -c "/usr/bin/nskm /dev/$(awk -F'=' '/DEVNAME/{print $2}' %I/uevent)"

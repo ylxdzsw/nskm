@@ -1,0 +1,1 @@
+ACTION=="add", KERNEL=="event*", SUBSYSTEM=="input", ENV{ID_INPUT_KEYBOARD}=="?*", ATTRS{id/bustype}!="0006", TAG+="systemd", ENV{SYSTEMD_WANTS}="nskm@.service"
