@@ -1,8 +1,8 @@
-# This is expected to be used with some udev rules, for example:
-# ACTION=="add", KERNEL=="event*", SUBSYSTEM=="input", ENV{ID_INPUT_KEYBOARD}=="?*", ATTRS{id/bustype}!="0006", TAG+="systemd", ENV{SYSTEMD_WANTS}="nskm@.service"
+# This is expected to be used with the udev rules
 
 [Unit]
 Description=Non-Sucking Key Mapper
 
 [Service]
+Nice=-15
 ExecStart=/usr/bin/sh -c "/usr/bin/nskm /dev/$(awk -F'=' '/DEVNAME/{print $2}' %I/uevent)"
