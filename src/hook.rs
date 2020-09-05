@@ -1,6 +1,6 @@
 use super::*;
 
-pub(crate) unsafe fn hook(mut ev: input_event, u: &UInput) {
+pub(crate) unsafe fn hook(ev: input_event, u: &UInput) {
     // simply forward non-keyboard events
     if ev.type_ != EV_KEY {
         u.emit(&ev);
@@ -35,14 +35,17 @@ pub(crate) unsafe fn hook(mut ev: input_event, u: &UInput) {
             match (ev.code, ev.value) {
                 ($from, V_KEYDOWN) if command_mode() => {
                     triggered_in_command_mode = true;
-                    ev.code = $to;
+                    u.emit(&input_event { code: $to, ..ev });
+                    return
                 },
                 ($from, V_KEYREP) if triggered_in_command_mode => {
-                    ev.code = $to;
+                    u.emit(&input_event { code: $to, ..ev });
+                    return
                 },
                 ($from, V_KEYUP) if triggered_in_command_mode => {
                     triggered_in_command_mode = false;
-                    ev.code = $to;
+                    u.emit(&input_event { code: $to, ..ev });
+                    return
                 },
                 _ => {}
             }
@@ -89,30 +92,18 @@ pub(crate) unsafe fn hook(mut ev: input_event, u: &UInput) {
 
     caps_map_to!(KEY_LEFT, KEY_PREVIOUSSONG);
     caps_map_to!(KEY_RIGHT, KEY_NEXTSONG);
-    caps_map_to!(KEY_UP, "su ylxdzsw -c 'XDG_RUNTIME_DIR=/run/user/1000 pactl set-sink-volume @DEFAULT_SINK@ +1%'\0");
-    caps_map_to!(KEY_DOWN, "su ylxdzsw -c 'XDG_RUNTIME_DIR=/run/user/1000 pactl set-sink-volume @DEFAULT_SINK@ -1%'\0");
+    caps_map_to!(KEY_END, KEY_PLAYPAUSE);
+    caps_map_to!(KEY_UP, KEY_VOLUMEUP);
+    caps_map_to!(KEY_DOWN, KEY_VOLUMEDOWN);
+    // caps_map_to!(KEY_PAGEUP, "su ylxdzsw -c 'XDG_RUNTIME_DIR=/run/user/1000 pactl set-sink-volume @DEFAULT_SINK@ +6%'\0");
+    // caps_map_to!(KEY_PAGEDOWN, "su ylxdzsw -c 'XDG_RUNTIME_DIR=/run/user/1000 pactl set-sink-volume @DEFAULT_SINK@ -6%'\0");
 
-    macro_rules! disable {
-        ($key:ident) => {
-            if ev.code == $key {
-                return
-            }
-        };
-    }
-
-    disable!(KEY_RIGHTSHIFT);
-
-    macro_rules! swap {
-        ($key1:ident, $key2:ident) => {
-            match ev.code {
-                $key1 => ev.code = $key2,
-                $key2 => ev.code = $key1,
-                _ => {}
-            }
-        }
-    }
-
-    swap!(KEY_LEFTCTRL, KEY_LEFTALT);
-
-    u.emit(&ev);
+    match ev.code {
+        KEY_RIGHTSHIFT => u.emit(&input_event { code: KEY_HOME, ..ev }),
+        KEY_LEFTCTRL => u.emit(&input_event { code: KEY_LEFTALT, ..ev }),
+        KEY_LEFTALT => u.emit(&input_event { code: KEY_LEFTCTRL, ..ev }),
+        KEY_PAUSE => u.emit(&input_event { code: KEY_INSERT, ..ev }),
+        KEY_RIGHTALT => u.emit(&input_event { code: KEY_MENU, ..ev }),
+        _ => u.emit(&ev)
+    };
 }
