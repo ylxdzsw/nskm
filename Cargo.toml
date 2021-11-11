@@ -1,8 +1,8 @@
 [package]
 name = "nskm"
-version = "0.2.4"
+version = "0.2.5"
 authors = ["Shiwei Zhang <ylxdzsw@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [profile.dev]
 panic = "abort"

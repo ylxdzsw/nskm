@@ -2,8 +2,6 @@
 #![allow(dead_code, unused_imports)]
 #![allow(non_camel_case_types)]
 #![allow(non_upper_case_globals)]
-#![deny(bare_trait_objects)]
-#![warn(clippy::all)]
 
 #![no_std]
 #![no_main]
@@ -73,7 +71,7 @@ unsafe fn setup(source: c_str) -> ! {
 
     // setup key events, for keyboard AND mouse button
     ioctl(fdo, UI_SET_EVBIT, EV_KEY as c_int).dienz("set key evbit");
-    let mut i: c_int = 0; // sucking loop 'cause Rust range iterations use Option internally.
+    let mut i: c_int = 0; // Rust range iterations use Option internally.
     while i < KEY_MAX as _ {
         ioctl(fdo, UI_SET_KEYBIT, i).dienz("set keybit");
         i += 1;
@@ -199,7 +197,7 @@ impl DieNZ for ssize_t { // read/write call
     }
 }
 
-/// the stupid way to spawn a process and directly send it to init
+/// the stupid way to spawn a process and send it to init
 unsafe fn spawn_orphan(p: c_str) {
     match fork() {
         -1 => die("spawn child"),
