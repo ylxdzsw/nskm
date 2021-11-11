@@ -1,5 +1,6 @@
 use super::*;
 
+#[inline(always)]
 pub(crate) unsafe fn hook(ev: input_event, u: &UInput) {
     // simply forward non-keyboard events
     if ev.type_ != EV_KEY {

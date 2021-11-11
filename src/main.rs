@@ -72,7 +72,7 @@ unsafe fn setup(source: c_str) -> ! {
     // setup key events, for keyboard AND mouse button
     ioctl(fdo, UI_SET_EVBIT, EV_KEY as c_int).dienz("set key evbit");
     let mut i: c_int = 0; // Rust range iterations use Option internally.
-    while i < KEY_MAX as _ {
+    while i < 0x223 { // systemd complains if we loop up to KEY_MAX. Didn't figure out which key is problematic.
         ioctl(fdo, UI_SET_KEYBIT, i).dienz("set keybit");
         i += 1;
     }
